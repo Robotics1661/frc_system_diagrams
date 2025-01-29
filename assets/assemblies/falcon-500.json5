@@ -1,0 +1,8 @@
+{
+  "main": "motors/falcon-500.json5",
+  "sockets": [
+    "pdh/can.json5",
+    "pdh/hc_40.json5",
+    "rio/can.json5"
+  ]
+}
