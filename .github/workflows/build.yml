@@ -1,0 +1,58 @@
+name: Build
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  pre-check:
+    runs-on: ubuntu-latest
+
+    outputs:
+      should_run: ${{ steps.check.outputs.should_run }}
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Run Pre-check Script
+        id: check
+        run: |
+          if [ "$(./build_hash_helper.sh --do-check)" = "skip" ]; then
+            echo "should_run=false" >> "$GITHUB_OUTPUT"
+            echo "Skipping build because no files have changed."
+          else
+            echo "should_run=true" >> "$GITHUB_OUTPUT"
+            echo "Files have changed. Running build."
+          fi
+
+  build:
+    needs: pre-check
+    if: needs.pre-check.outputs.should_run == 'true'
+
+    runs-on: ubuntu-latest
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y inkscape fonts-roboto
+
+      - name: Build
+        run: bash build.sh --roboto-is-installed
+
+      - name: Commit and push changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: 'Build SVGs'
+          file_pattern: 'last_build_hash.txt output/*.svg'

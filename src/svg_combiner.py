@@ -3,7 +3,7 @@ from xml.dom import minidom
 import random
 
 
-def uniq() -> str:
+def uniq(random_source: random.Random = random) -> str:
     alphabet = "abcdefghijklmnopqrstuvwxyz"
     numeric = "0123456789"
     if not hasattr(uniq, "past"):
@@ -11,7 +11,7 @@ def uniq() -> str:
 
     generated = None
     while generated is None or generated in uniq.past:
-        generated = random.choice(alphabet) + "".join(random.choices(alphabet + numeric, k=7))
+        generated = random_source.choice(alphabet) + "".join(random_source.choices(alphabet + numeric, k=7))
     return generated
 
 
@@ -47,6 +47,7 @@ class SVG:
         self._style_overrides[selector][key] = value
 
     def _rewrite_ids(self):
+        random_src = random.Random(self._path)
         # rewrite `id` and `class` attributes
         for element in self._doc.getElementsByTagName("*"):
             if element.hasAttribute("id"):
@@ -54,7 +55,7 @@ class SVG:
                 if old_id in self._remapped_ids:
                     new_id = self._remapped_ids[old_id]
                 else:
-                    new_id = f"{uniq()}_{old_id}"
+                    new_id = f"{uniq(random_src)}_{old_id}"
                     self._remapped_ids[old_id] = new_id
                 element.setAttribute("id", new_id)
             if element.hasAttribute("class"):
@@ -64,7 +65,7 @@ class SVG:
                 if old_class in self._remapped_classes:
                     new_class = self._remapped_classes[old_class]
                 else:
-                    new_class = f"{uniq()}_{old_class}"
+                    new_class = f"{uniq(random_src)}_{old_class}"
                     self._remapped_classes[old_class] = new_class
                 element.setAttribute("class", new_class)
 

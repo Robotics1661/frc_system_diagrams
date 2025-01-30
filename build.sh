@@ -1,5 +1,8 @@
 #!/bin/bash
 
+# Exit on error, and treat unset variables as errors
+set -eu
+
 function echo_and_exit {
   echo "$1"
   exit 1
@@ -13,7 +16,7 @@ fi
 
 
 # require the argument "--roboto-is-installed" to be passed, or exit
-if [ "$1" != "--roboto-is-installed" ]; then
+if [ "$#" -eq 0 ] || [ "$1" != "--roboto-is-installed" ]; then
   echo "Is the Roboto font installed on your system?"
   echo "It is needed to properly render the text in the SVGs."
   echo "Please install it from https://fonts.google.com/specimen/Roboto"
@@ -29,19 +32,11 @@ fi
 
 mkdir -p output
 
-
-function calculate_build_hash {
-  find assets src output -type f -exec md5sum {} \; | sort | md5sum | cut -d ' ' -f 1
-}
-
 # check if CURRENT_HASH matches the contents of last_build_hash, stripping any newlines
-CURRENT_HASH=$(calculate_build_hash)
-if [ -f last_build_hash.txt ]; then
-  LAST_HASH=$(tr -d '\n' < last_build_hash.txt)
-  if [ "$CURRENT_HASH" == "$LAST_HASH" ]; then
-    echo "No changes detected, skipping build"
-    exit 0
-  fi
+source build_hash_helper.sh
+if [ "$(needs_build)" == "skip" ]; then
+  echo "No changes detected, skipping build"
+  exit 0
 fi
 
 
@@ -59,22 +54,13 @@ fi
 
 # check if svgo (a program to optimize svg files) is installed
 echo "Checking for svgo"
-USE_SVGO=1
-if ! command -v svgo &> /dev/null
-then
+if ! command -v svgo &> /dev/null; then
   echo "svgo could not be found, checking for npm"
-  if ! command -v npm &> /dev/null
-  then
+  if ! command -v npm &> /dev/null; then
     echo "npm could not be found, will not optimize svgs"
-    USE_SVGO=0
   else
     echo "npm found, installing svgo"
-    USE_SVGO=$( (npm install -g svgo && echo 1) || echo 0 )
-    if [ "$USE_SVGO" -eq 0 ]; then
-      echo "Failed to install svgo, will not optimize svgs"
-    else
-      echo "svgo installed"
-    fi
+    (npm install -g svgo && echo "svgo installed") || echo "Failed to install svgo, will not optimize svgs"
   fi
 fi
 
@@ -105,7 +91,7 @@ find . -name "*.svg" | while read -r file; do
 done
 
 # check if we should use svgo
-if [ "$USE_SVGO" -eq 1 ]; then
+if command -v svgo &> /dev/null; then
   echo "> Optimizing SVGs"
   svgo -f . || echo_and_exit "Failed to optimize SVGs"
 else
