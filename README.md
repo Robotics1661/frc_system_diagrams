@@ -29,6 +29,6 @@ To force a rebuild, remove the `last_build_hash.txt` file, and run the above scr
 
 ## License
 Python code and scripts are by Sam Wagenaar (Griffitrons 1661) and are licensed under the MIT License.
-See the [LICENSE](LICENSE.txt) file for more information.
+See [LICENSE.txt](LICENSE.txt) for more information.
 
 SVG files are by Team 3161 and are licensed under the Creative Commons Attribution 4.0 International License.
